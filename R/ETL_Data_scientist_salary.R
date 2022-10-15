@@ -1,15 +1,15 @@
-library(tidyverse)
-library(httr)
-
-
-# ETL_data1 <- read.csv('data/data_cleaned_2021.csv')
+#=======================================================
+# author: César Carvalho
+# professor: Wagner Bonat
+# class: EDA
+# task: create insights for EDA and import the dataset 
+#       for next class.
+# 
+#=======================================================
 
 #extract_data -----
 
 ETL_data_salary <- read.csv('data/Data_Science_Fields_Salary_Categorization.csv') 
-
-
-#refactoring
 
 
 url_path <- paste0('https://www.exchangerates.org.uk/',
@@ -17,32 +17,43 @@ url_path <- paste0('https://www.exchangerates.org.uk/',
                    '2020',
                    '.html')
 
+
+#rough way ----
+
+#to get the exchange rates series from INR to USD
+
 get_exchg <- function(url_path) {
-  # require(tidyverse)
+  require(dplyr)
   
   ETL_url <- readLines(url(url_path), warn = FALSE,skipNul = TRUE)
+  unlink(ETL_url)
   
-  select_rows <- grep('            <tr class=\"col', ETL_url)
+  select_rows <- grep('            <tr class=\\\"col', ETL_url)
   
   df <- ETL_url[select_rows]
  
   sub_df <- unlist(strsplit(df, '</tr>'))
   
-  select_rows_sub_df <- grep('<tr class=\"col', sub_df)
+  select_rows_sub_df <- grep('<tr class=\\\"col', sub_df)
   
   data_raw <- sub_df[select_rows_sub_df]
   
+  data_raw[2]
+  
   lubridate::dmy(regmatches(sub_df,regexpr('\\d{2}/\\d{2}/\\d{4}', sub_df)))
   
-  regmatches(sub_df, regexpr('\\d{1}\\.\\d{3,4}', sub_df))
+  regmatches(sub_df, regexpr('\\d{1}\\.\\d{3,4}</td>', sub_df))
 
   dplyr::tibble(ref_date = lubridate::dmy(regmatches(sub_df,regexpr('\\d{2}/\\d{2}/\\d{4}', sub_df))),
-                values =  regmatches(sub_df, regexpr('\\d{1}\\.\\d{3,4}', sub_df)))
+                usd =  regmatches(sub_df, regexpr('\\d{1}\\.\\d{3,4}</td>', sub_df)) %>% 
+                  stringr::str_remove('(</td>)')
+  )
   
 }
   
   
-  
+
+  teste <- get_exchg(url_path)
   
   
   
