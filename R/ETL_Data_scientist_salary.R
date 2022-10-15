@@ -7,12 +7,50 @@
 # oackages: dplyr, stringr, lubridate,
 #=======================================================
 
+#issues ----
+
+
 #extract_data -----
 
 ETL_data_salary <- read.csv('data/Data_Science_Fields_Salary_Categorization.csv') 
 
+#glimpse -----
+#check & clean data ----
 
-# helpers ----
+fields <- names(ETL_data_salary)
+
+ # X -> (int) id 
+ # Working_Year -> (int) present date 
+ # Designation -> (chr) job title
+ # Experience
+ # Employment_Status -> chr
+ #   - "FT" -> full time
+ #   - "PT" -> part time
+ #   - "CT" -> contract ???
+ #   - "FL" -> freelance
+ # Salary_In_Rupees -> will be transformed do USD with year mean
+ # Employee_Location ->  get country names to associate
+ # Company_Location
+ # Company_Size
+ # Remote_Working_Ratio
+
+
+years <- unique(ETL_data_salary$Working_Year)
+
+designations <- unique(ETL_data_salary$Designation)
+
+experience <- unique(ETL_data_salary$Employment_Status)
+
+ee_location <- unique(ETL_data_salary$Employee_Location)
+
+co._location <- unique(ETL_data_salary$Company_Location)
+
+country_without_co. <-  ee_location[ee_location %in% co._location]
+country_without_co. <-  setdiff(ee_location, co._location)
+
+match(ee_location, ee_location == co._location)
+
+# making helpers ----
 #rough way to exchange rates ----
 
 #to get the exchange rates series from INR to USD
@@ -83,15 +121,7 @@ check_results_exchg <- exchange_rupees_dolars_rough %>%
   
 
 
-#check & clean data ----
 
-years <- unique(ETL_data_salary$Working_Year)
-
-designations <- unique(ETL_data_salary$Designation)
-
-experience <- unique(ETL_data_salary$Employment_Status)
-
-exchange_rate <- 
 
                        
                 
