@@ -1,0 +1,64 @@
+ mutate(description_class = str_replace(description_class, 'ATOS E? ?MANI?F?/', 'ATOS.E.MANIFESTACOES/')) %>% 
+   mutate(description_class = str_replace(description_class, '(^DESP(.| )COM?U?N?.?/?|^COM?U?N?/?)', 'COMUNICACAO/')) %>% 
+   # mutate(description_class = str_replace(description_class, '(^DESP(.| )COM?U?N?.?/?[^ ]|^COM?U?N?/?[^ ])', 'COMUNICACAO/')) %>% 
+   mutate(description_class = str_replace(description_class, '(^DESP(.| )JURID?I?C?(A?|O?)(?!=/)|^JURI?D?I?C?(A|O)?/?)', 'ASSUNTOS.JURIDICOS/')) %>% 
+   # mutate(description_class = str_replace(description_class, '(^DESP(.| )JURID?I?C?(A?|O?)(?!=/)|^JURI?D?I?C?(A?|O?)?)', 'ASSUNTOS.JURIDICOS/')) %>% 
+   mutate(description_class = str_replace(description_class, '(^DIR?E?T?O?R?I?A? REG(.|I)?O?N?A?L?(?!=/)|^REGIONAL?I?S?(?!=/))', 'DIRETORIA.REGIONAL/')) %>% 
+   mutate(description_class = str_replace(description_class, '^C(.|ENT?).?REC?R?E?A?T?I?/?', 'CENTRO.RECREATIVO/')) %>% 
+   mutate(description_class = str_replace(description_class, '^ASS(E|EMBLEIA)? E REUNIAO/', 'ASSEMBLEIA.E.REUNIAO/')) %>% 
+   mutate(description_class = str_replace(description_class, '^VIAG.?E?S?T?A?D?A?S?/', 'VIAGEM.E.ESTADAS/')) %>% 
+   mutate(description_class = str_replace(description_class, '^UTI(L.?|LID?.?)SERV.?I?(Ç?|C?)?O?S?.?/', 'UTILIDADES.E.SERVICOS/')) %>% 
+   mutate(description_class = str_replace(description_class, '^S(.|OCIO) CULTU?R?A?L?/', 'SOCIO.CULTURAL/')) %>% 
+   mutate(description_class = str_replace(description_class, '(^RE(L|LA(Ç|C).O) (INTE?R?|SINDIC)/|^INTERSINDICAL/)', 'RELACAO.INTERSINDICAL/')) %>% 
+   mutate(description_class = str_replace(description_class, '(^EL.SI/|ELE(I|I(Ç|C).O) SINDI?C?A?L?/)', 'ELEICAO.SINDICAL/')) %>% 
+   mutate(description_class = str_replace(description_class, '^ENC.CONGR?E?S?S?O?/', 'ENCONTROS.E.CONGRESSOS/')) %>%
+   mutate(description_class = str_replace(description_class, '^F(DO|UNDO) CAMPA?N?H?A?/', 'FUNDO.CAMPANHA/')) %>%
+   mutate(description_class = str_replace(description_class, '^F(DO|UNDO) LIB(.|ERERACAO )DIRETO?R?/', 'FUNDO.LIBERACAO.DIRETOR/')) %>%
+   mutate(description_class = str_replace(description_class, '^FOR(M|MACAO) ?/', 'FORMACAOO.SINDICAL/')) %>%
+   mutate(description_class = str_replace(description_class, '^PLEBI/', 'PLEBISCITO.CENTRAL.SINDICAL/')) %>%
+   mutate(description_class = str_replace(description_class, '^SAUD(E|E SEG)/', 'SAUDE.E.SEGURANCA/')) %>%
+   mutate(description_class = str_replace(description_class, '//', '/')) %>%
+   mutate(description_class = str_replace(description_class, '^COMUNICACAO/VALE CULTUR(A \\(0703\\)|A)', 'COMUNICACAO/FUNCIONARIO/VALE CULTURA')) %>%
+   mutate(description_class = str_replace(description_class, '^SAUDE.E.SEGURANCA/ ?VALE CULTU(RA \\(0724\\)|RA)', 'SAUDE.E.SEGURANCA/FUNCIONARIO/VALE CULTURA')) %>%
+   mutate(class = map(description_class, function(x) str_split(x, '/')[[1]][1])) %>% 
+   unnest(class) %>% 
+   mutate(description_subclass = str_sub(description_class, str_count(class)+2L, 200L)) %>% 
+ # unique(LedgerAccount$class) #check the working
+   # SUBCLASS
+   mutate(description_subclass = str_squish(description_subclass)) %>%
+   mutate(description_subclass = str_replace(description_subclass, '(^FUNCIONARIO/?|(FUNICIONARIO/|^FUNCION/?|^FUNC?(\\.| |I)|^FUN?(/|.)))', 'FUNCIONARIO/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '((^FUNCIONARIO//?ENC(\\.| )SOCI?A?I?S?(/|.))|^ENC(\\.| )SOCI?A?I?S?(/| ))', 'ENCARGOS.SOCIAIS/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '^13(.| )? ?SALARIO/?', 'FUNCIONARIO/13.SALARIO/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '(^AUX.+)', 'FUNCIONARIO/\\1')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '^MA(T|TER(I|\\.)A?L?) ODONT(OLOGICO|(O \\(2935\\)|O))/?', 'GABINETE.ODONTOLOGICO/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, 
+                                             '(^O(UTRAS|U) DES(PESAS|P?) ?(PES?)?/|^OU(T| )(R| ?)A?S? ?DES(PESAS|P\\.).?P?E?S ?/)', 'OUTRAS.DESPESAS.PESSOAL/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, 'CONSERV E? ?MANU(TENCAO|T)/', 'CONSERVACAO.MANUTENCAO/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '^DESP\\.? ?ORNA((MENTAC?A?O?|M \\(3019\\))|M)/?', 'DESPESA.ORNAMENTACAO/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '^DESP(\\.| ) ?S?O?C?.? ?CULTU?( \\(2753\\)?|RAIS|RAL|RA)?/?', 'DESPESA.SOCIO.CULTURAL/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '^(^U(TILI?D?|T)\\.? ?E? ?SERV?I?C?O?/|^UTI/SERVI/|^UT/)', 'UTILIDADE.SERVICO/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '(SOCORRO FARMA(CEUTICO|C \\(2641|C))', 'DESPESAS.DE.SAUDE.E.SEGURANCA/\\1')) %>%
+   mutate(description_subclass = str_replace(description_subclass, 'DESP(\\.| )? ?ESPORT( \\(2746\\)|(IVA)?)', 'DESPESAS.ESPORTIVAS/')) %>%
+   mutate(description_subclass = str_replace(description_subclass, '//', '/')) %>%
+   mutate(subclass = map(description_subclass, function(x) str_split(x, '/')[[1]][1])) %>% 
+   unnest(subclass) %>% 
+ 
+   mutate(item = str_sub(description_subclass, str_count(subclass)+2L, 200L)) %>% 
+   mutate(item = str_replace(item, '13.+', '13 SALARIO')) %>%
+   mutate(item = str_replace(item, '(A|Á)GUA.+(AVEL \\(1785\\)|AVEL)', 'AGUA POTAVEL')) %>% 
+   mutate(item = str_replace(item, '(A|Á)GUA.+(MINERAL.+|MINERAL)', 'AGUA MINERAL')) %>% 
+   mutate(item = str_replace(item, '(A|Á)GUA.+(OTO.+|OTO)', 'AGUA E ESGOTO')) %>% 
+   mutate(item = str_replace(item, 'AJ.+(UST.+|UST?)', 'AJUDA DE CUSTO')) %>% 
+   # mutate(item = str_replace(item, 'ALIM.+', 'ALIMENTACAO')) %>% 
+   mutate(item = str_replace(item, 'AR.+CON.+', 'AR-CONDICIONADO')) %>% 
+   mutate(item = str_replace(item, 'ASS.+(CA.+|CA)', 'ASSESSORIA JURIDICA')) %>% 
+   mutate(item = str_replace(item, 'AUX.+CH.+', 'AUXILIO CRECHE')) %>% 
+   # mutate(item = str_replace(item, 'AUX.+(DUC.+|CAO)', 'AUXILIO EDUCACAO')) %>% 
+   mutate(item = str_replace(item, 'AU.+FUN.+', 'AUXILIO FUNERAL')) %>% 
+   mutate(item = str_replace(item, 'AUX.+((Ú|U)DE.+|(Ú|U)DE)', 'AUXILIO SAUDE')) %>% 
+   mutate(item = str_replace(item, 'BENS IM.+', 'BENS IMOVEIS')) %>% 
+   mutate(item = str_replace(item, 'BENS M.+', 'BENS MOVEIS')) %>% 
+   mutate(item = str_replace(item, 'CAMA.+(BANHO.+|BANHO)', 'CAMA, MESA E BANHO')) %>% 
+   mutate(item = str_replace(item, 'CENTR.+TELE.+', 'CENTRAL TELEFONICA')) %>% 
+   mutate(item = str_replace(item, 'COMBU.+LUBR.+', 'COMBUSTIVEL E LUBRIFICANTE')) %>% 
+   mutate(item = str_replace(item, 'COMBUST(Í|I)VEL.+', 'COMBUSTIVEL')) 
