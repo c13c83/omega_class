@@ -48,7 +48,7 @@ co._location <- unique(ETL_data_salary$Company_Location)
 country_without_co. <-  ee_location[ee_location %in% co._location]
 country_without_co. <-  setdiff(ee_location, co._location)
 
-match(ee_location, ee_location == co._location)
+# match(ee_location, ee_location == co._location)
 
 # making helpers ----
 #rough way to exchange rates ----
@@ -118,10 +118,27 @@ check_results_exchg <- exchange_rupees_dolars_rough %>%
   left_join(exchange_rupees_dolars_elegant,
             by = c('ref_date')) %>% 
   mutate(check = usd.y == usd.x)
-  
+
+n_exchg_elegant <- length(unique(exchange_rupees_dolars_elegant$ref_date))
+n_exchg_rough <- length(unique(exchange_rupees_dolars_rough$ref_date))
+n_res_exchg_check <- length(check_results_exchg$check)
+
+if(n_exchg_elegant == n_exchg_rough) n_exchg_elegant == n_res_exchg_check
+
+year_mean <- exchange_rupees_dolars_elegant %>% 
+  mutate(year = lubridate::year(ref_date)) %>% 
+  group_by(year) %>% 
+    summarise(mean = mean(usd))
 
 
+#sanitize data
+
+#exchange rupees to dollar by yearly mean
 
 
-                       
-                
+ETL_USD <- ETL_data_salary %>% 
+  mutate(rate_usd = map(Working_Year, function(x) year_mean$mean[x == year_mean$year])) %>% 
+  unnest(cols = c(rate_usd))
+ 
+
+
