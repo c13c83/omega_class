@@ -138,7 +138,11 @@ year_mean <- exchange_rupees_dolars_elegant %>%
 
 ETL_USD <- ETL_data_salary %>% 
   mutate(rate_usd = map(Working_Year, function(x) year_mean$mean[x == year_mean$year])) %>% 
-  unnest(cols = c(rate_usd))
+  unnest(cols = c(rate_usd)) %>% 
+  mutate(Salary_In_Rupees = readr::parse_number(Salary_In_Rupees, locale = readr::locale(decimal_mark = "."))) %>% 
+  mutate(Salary_In_USD_Dollars = Salary_In_Rupees * rate_usd)
  
+
+
 
 
