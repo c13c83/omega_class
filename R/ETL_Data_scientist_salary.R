@@ -136,13 +136,32 @@ year_mean <- exchange_rupees_dolars_elegant %>%
 #exchange rupees to dollar by yearly mean
 
 
-ETL_USD <- ETL_data_salary %>% 
+df <- ETL_data_salary %>% 
   mutate(rate_usd = map(Working_Year, function(x) year_mean$mean[x == year_mean$year])) %>% 
   unnest(cols = c(rate_usd)) %>% 
   mutate(Salary_In_Rupees = readr::parse_number(Salary_In_Rupees, locale = readr::locale(decimal_mark = "."))) %>% 
-  mutate(Salary_In_USD_Dollars = Salary_In_Rupees * rate_usd)
+  mutate(Salary_In_USD_Dollars = Salary_In_Rupees * rate_usd) %>% 
+  relocate(Salary_In_USD_Dollars, .before = Salary_In_Rupees)
  
 
 
+#classifying columns ----
 
 
+table(ETL_USD$Working_Year)
+prop.table(ETL_USD$Working_Year)
+
+df$Working_Year <- factor(ETL_USD$Working_Year, levels = c('2020', '2021', '2022'))
+df$Company_Size <- factor(ETL_USD$Company_Size, levels = c('S', 'M', 'L'))
+df$Experience <- factor(ETL_USD$Experience, levels = c('EN', 'MI', 'SE', 'EX'))
+df$Company_Location <- as.factor(ETL_USD$Company_Location)
+df$Employee_Location <- as.factor(ETL_USD$Employee_Location)
+df$Employment_Status <- factor(ETL_USD$Employment_Status, levels = c('FL', 'CT', 'PT', 'FT'))
+df$Designation <- as.factor(ETL_USD$Designation)
+
+
+table(df$Employment_Status)
+
+head(ETL_USD)
+
+summary(df)
