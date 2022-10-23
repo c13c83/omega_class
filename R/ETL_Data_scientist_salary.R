@@ -4,11 +4,20 @@
 # class: EDA
 # task: create insights for EDA and import the dataset 
 #       for next class.
-# oackages: dplyr, stringr, lubridate,
+# oackages: dplyr, stringr, lubridate, xml2, ggplot2,
+# purrr, tidyr, readr
 #=======================================================
+
+
+# loading some packages the other packages will called only the specific functions ----
+pckgs <- c('dplyr', 
+           'stringr', 
+           'ggplot2')
+invisible(lapply(pckgs, library, character.only = TRUE))
 
 #issues ----
 
+# ????
 
 #extract_data -----
 
@@ -17,7 +26,7 @@ ETL_data_salary <- read.csv('data/Data_Science_Fields_Salary_Categorization.csv'
 #glimpse -----
 #check & clean data ----
 
-fields <- names(ETL_data_salary)
+columns_names <- names(ETL_data_salary)
 
  # X -> (int) id 
  # Working_Year -> (int) present date 
@@ -37,7 +46,7 @@ fields <- names(ETL_data_salary)
 
 years <- unique(ETL_data_salary$Working_Year)
 
-designations <- unique(ETL_data_salary$Designation)
+designations <- sort(unique(ETL_data_salary$Designation))
 
 experience <- unique(ETL_data_salary$Employment_Status)
 
@@ -56,7 +65,7 @@ country_without_co. <-  setdiff(ee_location, co._location)
 #to get the exchange rates series from INR to USD
 
 get_exchg <- function(year) {
-  require(dplyr)
+  # require(dplyr)
   
   url_path <- paste0('https://www.exchangerates.org.uk/',
                      'INR-USD-spot-exchange-rates-history-',
@@ -86,9 +95,6 @@ get_exchg <- function(year) {
 # elegant way to get the exchange rates ---- 
 
 elegant_get_exchg <- function(year) {
-  
-  require(tidyverse)
-  require(xml2)
 
   url_path <- url(paste0('https://www.exchangerates.org.uk/',
                          'INR-USD-spot-exchange-rates-history-',
@@ -96,18 +102,18 @@ elegant_get_exchg <- function(year) {
                          '.html')
                   )
   
-  html <- read_html(url_path)
+  html <- xml2::read_html(url_path)
   
-  tibble(ref_date = html %>% 
-           xml_find_all(r"(//tr[@class='colone' or @class='coltwo']/td[3])") %>% 
-           xml_text() %>% 
-           str_extract(r"(\d\d/\d\d/\d{4})") %>% 
-           lubridate::dmy(),
-         usd = html %>% 
-           xml_find_all(r"(//tr[@class='colone' or @class='coltwo']/td[2])") %>% 
-           xml_text() %>% 
-           str_extract(r"(\d\.\d+$)") %>% 
-           as.numeric())        
+  dplyr::tibble(ref_date = html %>%
+                  xml2::xml_find_all(r"(//tr[@class='colone' or @class='coltwo']/td[3])") %>%
+                  xml2::xml_text() %>% 
+                  stringr::str_extract(r"(\d\d/\d\d/\d{4})") %>% 
+                  lubridate::dmy(),
+                usd = html %>% 
+                  xml2::xml_find_all(r"(//tr[@class='colone' or @class='coltwo']/td[2])") %>% 
+                  xml2::xml_text() %>% 
+                  stringr::str_extract(r"(\d\.\d+$)") %>% 
+                  as.numeric())        
 }
 
 
@@ -137,10 +143,10 @@ year_mean <- exchange_rupees_dolars_elegant %>%
 
 
 df <- ETL_data_salary %>% 
-  mutate(rate_usd = map(Working_Year, function(x) year_mean$mean[x == year_mean$year])) %>% 
-  unnest(cols = c(rate_usd)) %>% 
+  mutate(Rate_USD = purrr::map(Working_Year, function(x) year_mean$mean[x == year_mean$year])) %>% 
+  tidyr::unnest(cols = c(Rate_USD)) %>% 
   mutate(Salary_In_Rupees = readr::parse_number(Salary_In_Rupees, locale = readr::locale(decimal_mark = "."))) %>% 
-  mutate(Salary_In_USD_Dollars = Salary_In_Rupees * rate_usd) %>% 
+  mutate(Salary_In_USD_Dollars = Salary_In_Rupees * Rate_USD) %>% 
   relocate(Salary_In_USD_Dollars, .before = Salary_In_Rupees)
  
 
@@ -151,13 +157,22 @@ df <- ETL_data_salary %>%
 table(ETL_USD$Working_Year)
 prop.table(ETL_USD$Working_Year)
 
+
 df$Working_Year <- factor(ETL_USD$Working_Year, levels = c('2020', '2021', '2022'))
 df$Company_Size <- factor(ETL_USD$Company_Size, levels = c('S', 'M', 'L'))
 df$Experience <- factor(ETL_USD$Experience, levels = c('EN', 'MI', 'SE', 'EX'))
-df$Company_Location <- as.factor(ETL_USD$Company_Location)
-df$Employee_Location <- as.factor(ETL_USD$Employee_Location)
-df$Employment_Status <- factor(ETL_USD$Employment_Status, levels = c('FL', 'CT', 'PT', 'FT'))
-df$Designation <- as.factor(ETL_USD$Designation)
+df$Employment_Status <- factor
+
+my_factor <- function()
+
+df <- df %>% 
+mutate(across(.cols = c(Designation,
+                        Employee_Location,
+                        # Employment_Status,
+                        Company_Location),
+              as.factor))
+
+
 
 
 table(df$Employment_Status)
@@ -165,3 +180,7 @@ table(df$Employment_Status)
 head(ETL_USD)
 
 summary(df)
+
+ggplot(df) +
+  geom_bar(aes(x = Designation)) +
+  coord_flip()
