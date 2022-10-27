@@ -1,50 +1,57 @@
-#====================README=============================
-# author: César Carvalho
-# professor: Wagner Bonat
-# class: EDA
-# task: create insights for EDA and import the dataset 
-#       for next class.
-# oackages: dplyr, stringr, lubridate, xml2, ggplot2,
-# purrr, tidyr, readr
-# `=====================================================`
+---
+title: "EDA with R"
+date: "Spring 2022"
+output:
+  html_notebook:
+    theme: readable
+    toc: TRUE
+    toc_float: TRUE
+packages: dplyr, stringr, lubridate, xml2, ggplot2,purrr, tidyr, readr
+---
 
-#===================INIT================================
-# loading some packages, the other packages will called 
-#only the specific functions ----
+
+
+
+```{r}
 pckgs <- c('dplyr', 
            'stringr', 
            'ggplot2')
 invisible(lapply(pckgs, library, character.only = TRUE))
+```
 
-#issues ----
+# 1. Extracting data
 
-# ????
-
-#extract_data -----
-
+```{r}
 ETL_data_salary <- read.csv('data/Data_Science_Fields_Salary_Categorization.csv') 
+```
 
-#glimpse -----
-#check & clean data ----
 
+### Getting columns
+```{r}
 columns_names <- names(ETL_data_salary)
+```
 
- # X -> (int) id 
- # Working_Year -> (int) present date 
- # Designation -> (chr) job title
- # Experience
- # Employment_Status -> chr
- #   - "FT" -> full time
- #   - "PT" -> part time
- #   - "CT" -> contract ???
- #   - "FL" -> freelance
- # Salary_In_Rupees -> will be transformed do USD with year mean
- # Employee_Location ->  get country names to associate
- # Company_Location
- # Company_Size
- # Remote_Working_Ratio
 
-{
+## check & clean data
+
+
+ X -> (int) id 
+ Working_Year -> (int) present date 
+ Designation -> (chr) job title
+ Experience
+ Employment_Status -> chr
+   - "FT" -> full time
+   - "PT" -> part time
+   - "CT" -> contract ???
+   - "FL" -> freelance
+ Salary_In_Rupees -> will be transformed do USD with year mean
+ Employee_Location ->  get country names to associate
+ Company_Location
+ Company_Size
+ Remote_Working_Ratio
+
+
+```{r}
 years <- unique(ETL_data_salary$Working_Year)
 
 designations <- sort(unique(ETL_data_salary$Designation))
@@ -57,16 +64,20 @@ co._location <- unique(ETL_data_salary$Company_Location)
 
 country_with_co. <-  ee_location[ee_location %in% co._location]
 country_without_co. <-  setdiff(ee_location, co._location)
-}
 
-# making helpers ----
+```
 
-#rough way to exchange rates ----
+# 2. making helpers
 
-#to get the exchange rates series from INR to USD
+rough way to exchange rates 
 
+<!-- #to get the exchange rates series from INR to USD -->
+```{r}
 url_is_ok <- function(url) if(attr(curlGetHeaders(url), 'status') == 200) TRUE
+```
 
+
+```{r}
 get_exchg <- function(year) {
   # require(dplyr)
   
@@ -103,8 +114,12 @@ get_exchg <- function(year) {
   # on.exit(closeAllConnections())
 
 }
+```
 
-# elegant way to get the exchange rates ---- 
+## elegant way to get the exchange rates 
+
+```{r}
+
 
 elegant_get_exchg <- function(year) {
 
@@ -130,7 +145,13 @@ elegant_get_exchg <- function(year) {
                   as.numeric())        
 }
 
-# just checking the two methods to get exchange
+```
+
+## just checking the two methods to get exchange
+
+```{r}
+
+
 exchange_rupees_dolars_rough <- purrr::map_df(years, get_exchg)
 exchange_rupees_dolars_elegant <- purrr::map_df(years, elegant_get_exchg)
   
@@ -142,9 +163,13 @@ check_results_exchg <- exchange_rupees_dolars_rough %>%
 n_exchg_rough <- length(unique(exchange_rupees_dolars_rough$ref_date))
 n_exchg_elegant <- length(unique(exchange_rupees_dolars_elegant$ref_date))
 n_res_exchg_check <- length(check_results_exchg$check)
+```
 
-#after run this, if the results are the same, it will remove 'n_exchg_rough',
-#and when run again you will get an error, so run the code from init again
+## after run this, if the results are the same, it will remove 'n_exchg_rough',
+## and when run again you will get an error, so run the code from init again
+```{r}
+
+
 if(n_exchg_elegant == n_exchg_rough) {
   if (n_exchg_elegant == n_res_exchg_check) cat('the result is equal \n')
   cat('removing unnecessary vectors ;)')
@@ -153,17 +178,22 @@ if(n_exchg_elegant == n_exchg_rough) {
   #just for safety if website is down - have a local file
   saveRDS(n_exchg_elegant, 'data/exchange_rates.rds') 
   }
+```
 
-# getting the mean by year
+## getting the mean by year
+```{r}
+
+
 year_mean <- exchange_rupees_dolars_elegant %>% 
   mutate(year = lubridate::year(ref_date)) %>% 
   group_by(year) %>% 
     summarise(mean = mean(usd))
+```
 
-#sanitize data ----
+# 3. Sanitizing data
 
-#exchange rupees to dollar mean exchg by year----
-
+## exchange rupees to dollar mean exchg by year
+```{r}
 df <- ETL_data_salary %>% 
   mutate(Rate_USD = purrr::map(Working_Year, 
                                function(x) year_mean$mean[x == year_mean$year])) %>% 
@@ -172,10 +202,12 @@ df <- ETL_data_salary %>%
                                                 locale = readr::locale(decimal_mark = "."))) %>% 
   mutate(Salary_In_USD_Dollars = Salary_In_Rupees * Rate_USD) %>% 
   relocate(Salary_In_USD_Dollars, .before = Salary_In_Rupees)
+```
  
-#classifying columns ---- 
+# 4.Modeling Data 
 
 t <- table(c(df$Designation, ))
+```{r}
 
 df_Designation_n_yr <- df %>% 
   group_by(Designation) %>% 
@@ -194,6 +226,8 @@ df_Designation_ee <- df %>%
 
 
   filter(qtd == 1L) %>% 
+```
+
 
 
 
@@ -244,12 +278,15 @@ my_factor <- function(df_input, to_factor, order_by){
 
 
 
-# converting to factor ----
+## converting to factor ----
+```{r}
 df <- df %>% 
 mutate(across(.cols = c(Designation,
                         Employee_Location,
                         Company_Location),
               as.factor))
+
+```
 
 
 
@@ -258,12 +295,27 @@ table(df$Employment_Status)
 
 head(ETL_USD)
 
-#summarizing -----
+#summarizing 
+```{r}
+
+
 summary(df)
+```
 
+# 5. Analising
 
-# plots -----
+## plots
+```{r}
+
 
 ggplot(df) +
   geom_bar(aes(x = Designation)) +
   coord_flip()
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
