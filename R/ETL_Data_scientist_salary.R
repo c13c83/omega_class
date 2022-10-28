@@ -228,8 +228,9 @@ dfs <- list(df1, df2)
 
 prop.table(ETL_USD$Working_Year)
 
+df_bck <- df
 
-df$Working_Year <- factor(ETL_USD$Working_Year, 
+df$Working_Year <- factor(df_bck$Working_Year, 
                           levels = c('2020', '2021', '2022'))
 df$Company_Size <- factor(ETL_USD$Company_Size, 
                           levels = c('S', 'M', 'L'))
@@ -249,8 +250,22 @@ df <- df %>%
 mutate(across(.cols = c(Designation,
                         Employee_Location,
                         Company_Location),
-              as.factor))
+              as.factor)) 
 
+order <- df %>% 
+  group_by(Salary_In_USD_Dollars) %>% 
+  summarise('N' = n()) %>% 
+  arrange(N) %>% 
+  select(Salary_In_USD_Dollars)
+
+order <- df %>% 
+  group_by(Salary_In_USD_Dollars) %>% 
+  arrange(Salary_In_USD_Dollars)
+
+df$Salary_In_USD_Dollars <- factor(df$Salary_In_USD_Dollars, levels = order$Salary_In_USD_Dollars)
+
+
+order <- 
 
 
 
@@ -260,6 +275,8 @@ head(ETL_USD)
 
 #summarizing -----
 summary(df)
+
+ordem <- e
 
 
 # plots -----

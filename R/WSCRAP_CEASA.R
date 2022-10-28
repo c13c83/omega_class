@@ -17,37 +17,89 @@ invisible(lapply(pckgs, library, character.only = TRUE))
 
 dmy_ <- function(x) format(as.Date(x), "%d-%m-%Y")
 
-url <- function(x) paste0('https://ceasa.rs.gov.br/tabcotacao/cotacao-', dmy_(x), '/')
-
+url <- function(x) {
+  if (x < as.Date('2020-01-08')) return(paste0('https://ceasa.rs.gov.br/tabcotacao/cotacao-', dmy_(x), '/'))
+  if (x == as.Date('2020-01-08')) return('https://ceasa.rs.gov.br/tabcotacao/2339/')
+  if (x > as.Date('2020-01-08')) return(paste0('https://ceasa.rs.gov.br/tabcotacao/', dmy_(x), '/'))
+}
 
 # settings ----
-# curretn_date <- format(Sys.Date(), "%d-%m-%Y")
+
 start <- as.Date('2019-11-12')
-end <- today()        
-diff_days <- as.numeric(end-start)
-                  
-days <- start + 1:diff_days
+diff_days <- as.numeric(today() - start)
+days <- start - 1 + 1:diff_days %>% sort(decreasing = FALSE)
 
-z = structure(list(a = 1), foo = 2)
-base::attr(diff_days, 'numeric') # 2
+day <- days[59]
+url(day)
 
-dates %>% sort(decreasing = FALSE)
+curlGetHeaders(url(day)) %>%
+    attr(which = 'status')
 
-date1 <- ymd_hms("2009-03-08 01:59:59")
-date2 <- ymd_hms("2000-02-29 12:00:00")
-interval(date2, date1)
-interval(date1, date2)
-span <- interval(ymd(20090101), ymd(20090201))
+read_ceasa <- function(day) {
+  status_url <- curlGetHeaders(url(day)) %>%
+    attr(which = 'status')
+  
+  if (status_url == 404L) return()
+  
+  html <- xml2::read_html(url(day))
+  
+  tbl <- html %>%
+    xml_find_all(xpath = '//*//table[starts-with(@id, "tablepress-")]')
 
-lubridate::int_end()
+  
+  rows <- tbl %>% xml_find_all(xpath = '//tr'  )
+  
+  n_col <- tbl %>% 
+    xml_find_all(xpath = '//tr//td') %>% 
+    xml_attrs() %>% 
+    unique() %>% 
+    length()
+  
+  col_names <- c('product',
+                 'unit',
+                 'max',
+                 'moda',
+                 'min')
+  
+  col_6names <- c('product',
+                  'unit',
+                  'type_unit',
+                  'max',
+                  'moda',
+                  'min')
+  
+  # getting the values from tr looking the td, after 28-11-2019 (d-m-Y) we have
+  # 5 cols, the columns weight was removed. In fact it really was unnecessary
+  map_dfc(1:n_col, function(x) {
+    as_tibble(rows %>% 
+             xml_find_all(xpath = paste0('//td[', x, ']')) %>%
+             xml_text(),
+             quiet = TRUE
+           # .names_repair = ~ vctrs::vec_as_names(..., repair = "unique", quiet = TRUE)
+           )}
+    ) %>% 
+    set_names(nm = if (n_col == 5L){col_names} else {col_6names}) %>%
+    select(-any_of('type_unit')) %>% 
+    mutate(ref_date = day)
+}
 
-html <- xml2::read_html(url(start))
 
-html %>% xml2::xml_structure()
+df <- map_df(days, read_ceasa)
 
-tbl <- html %>%
-  xml_find_all(xpath = '//*//table[@id="tablepress-8"]')
+df <- tibble('product' = NULL,
+             'type_unit' = NULL,
+             'qty_unit' = NULL,
+             'max' = NULL,
+             'moda' = NULL,
+             'min' = NULL,
+             )
 
+for (i in 50:length(days)) {
+  
+  df <- df %>% bind_rows(read_ceasa(days[i]))
+  
+  cat(paste('getting day:', days[i], 'from loop ->', i, '\n'))
+  
+}
 
-
-url(start) 
+saveRDS(df, 'data/preview_ceasa.rds')
