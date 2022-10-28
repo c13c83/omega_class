@@ -2,6 +2,7 @@
 title: "EDA in R"
 author: "Cesar Carvalho"
 date: '2022-10-24'
+class: 'Omega DataScience'
 output: html_document
 ---
 
