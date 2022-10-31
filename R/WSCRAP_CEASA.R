@@ -10,7 +10,9 @@ Packages <- names(sessionInfo()[["otherPkgs"]])
 pckgs <- c('dplyr', 
            'stringr', 
            'ggplot2',
-           'lubridate')
+           'lubridate',
+           'purrr',
+           'xml2')
 invisible(lapply(pckgs, library, character.only = TRUE))
 
 #helpers -----
@@ -29,11 +31,11 @@ start <- as.Date('2019-11-12')
 diff_days <- as.numeric(today() - start)
 days <- start - 1 + 1:diff_days %>% sort(decreasing = FALSE)
 
-day <- days[59]
-url(day)
-
-curlGetHeaders(url(day)) %>%
-    attr(which = 'status')
+# day <- days[59]
+# url(day)
+# 
+# curlGetHeaders(url(day)) %>%
+#     attr(which = 'status')
 
 read_ceasa <- function(day) {
   status_url <- curlGetHeaders(url(day)) %>%
@@ -84,22 +86,20 @@ read_ceasa <- function(day) {
 }
 
 
-df <- map_df(days, read_ceasa)
+# df <- map_df(days, read_ceasa)
+# 
+# df <- tibble('product' = NULL,
+#              'type_unit' = NULL,
+#              'qty_unit' = NULL,
+#              'max' = NULL,
+#              'moda' = NULL,
+#              'min' = NULL,
+#              )
 
-df <- tibble('product' = NULL,
-             'type_unit' = NULL,
-             'qty_unit' = NULL,
-             'max' = NULL,
-             'moda' = NULL,
-             'min' = NULL,
-             )
-
-for (i in 50:length(days)) {
+for (i in 1:length(days)) {
   
   df <- df %>% bind_rows(read_ceasa(days[i]))
   
-  cat(paste('getting day:', days[i], 'from loop ->', i, '\n'))
+  cat(paste('getting day:', days[i], '-', lubridate::wday(days[i], label = TRUE), 'from loop ->', i, '\n'))
   
 }
-
-saveRDS(df, 'data/preview_ceasa.rds')
